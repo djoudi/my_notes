@@ -1,0 +1,704 @@
+# The Ruby on Rails Notes
+
+# Creating a new project
+$ rails new simple_cms -d mysq
+
+# Start the server
+$ rails server | rails s // s for shortcut
+
+# Generating a Controller and View
+$ rails generate controller controller_name | view_name_1 view_name_2 
+
+# Routes
+## Simple, match route
+   get "demo/index"
+OR 
+   match "demo/index",
+	 :to  => "demo#index"
+	 :via => :get
+
+## Default route
+   match ":controller(/:action(/:id(.:format)))", :via => :get
+
+## Route route
+   root :to => "demo#index"
+OR
+   root "demo#index"
+
+# Rendering templates
+ inside a action method put
+ render(:template => 'demo/hello')
+OR
+ render('demo/hello') // you can get read of :template
+OR
+ render('hello') // demo beying the controller name, then it can be ommited
+
+# Redirecting actions
+in action method put
+derirect_to(:controller => 'demo', :action => 'index')
+derirect_to(:action => 'index') // if this code is in the same controller file.
+
+# View Templates
+Use the  '.erb' extession in the template file name
+Then use the following code inside of it :
+  <% // code to be process %> 
+  <%= // code to be process & output %> 
+Eg1. <% target = "world" %>
+    <%= "Hello #{target}" %>
+Eg2. 
+   <% 3.times do %>
+   <%= "xxx" %>
+   <% end %>	
+
+# Instance Variables
+Instance variables are variables that exist only in the current instance of the controller
+They are used to pass data to views.
+We can declare an instance variable like so : @var1, @var_2 ...
+Eg.
+  // Somewhere in the controller
+     @array = [1,2,3,4,5]
+  // Somewhere in view
+    <% @array.each |value| do %>
+    <%= value %>
+    <% end %>
+
+# Links
+To create a link we use Rails 'link_to' method like so :
+ <%= link_to(text,target) %>
+Eg1. <%= link_to('index','/demo/index') %>
+Eg2. <%= link_to('index',{:controller => 'demo', :action => 'index', :id => 1, :page => 3, :name => 'john'}) %>
+':id', ':page', and ':name' are the url parameters.
+The last example output url  will be : /demo/index/1?page=3&name=john
+The hash key ':id' is a special one for Ruby,for this reason Ruby put it in the left side of question mark '?'..
+We can access these parameters from the controller by 'params' hash like so :
+Eg. params[:id] for example.
+The last example is considered a best practice.
+
+# Introducing Databases
+## Rails Covention
+DB name  : some_thing
+Table name : some_tables (Plural form of the name eg. products, clients, orders).
+column name : some_column..
+
+# Creating a Database
+## Mysql commands that we will need
+SHOW DATABASES;
+CREATE DATABASE THE_DB_NAME;
+USE THE_DB_NAME;
+DROP THE_DB_NAME;
+// To create a new mysql user
+GRANT ALL PRIVILEGES ON THE_DB_NAME.* TO 'USERNAME@localhost' IDENTIFIED BY 'THE_PASSWORD';
+// To show the assigned privilleges to a user do like so :
+SHOW GRANTS FOR 'USERNAME@localhost';
+// To show table defenition type
+SHOW FIELDS FROM THE_TABLE_NAME;
+
+To let Rails connect to owr Database server properly we have set configuration values in 
+'database.yml'
+
+To tel Rails to export owr DB schema into 'db/schema.rb' we have to type :
+$ rake db:schema:dump
+
+# Rake
+'rake' is simple Ruby helper that run tasks & commands
+To see all available tasks type: 
+$ rake -T
+$ rake -T db // All Database tasks
+$ rake -T db RAILS_ENV=production // we set the environment to production here.
+
+# Migrations
+Helps us to migrate owr DB from one state to another.
+Moving 'up' to a new state.
+Moving back 'down' to a previous state.
+VI : In the 'down' method we have to reverse the mothods early used in the 'up' method and their order as well.
+
+## Generating migration
+$ rails generate migration DoNothingYet // The migrationl name must be in KamelCase
+We can also generate the migration by generating the model like so :
+$ rails generate model User // The model name must be in KamelCase
+In the migration file we can create column in two maner like so :
+// In create_table block put
+  t.column "colum_name", :type, options
+// OR
+  t.type "column_name", options
+### Types
+binary, string, text, boolean, date, datetime, time, decimal, float, integer
+
+### Options
+:limit => size
+:default => value
+:null => true/false
+:precision => number
+:scale => number
+:after => "a_column_name" // put a column after another.
+
+The t.timestamps is the same as creating the following to column 'created_at' and 'updated_at'
+they are both of type 'datetime'.
+To disable the auto generation 'id' column do as follow :
+// In create_table line
+   create_table :some_table, {:id => flase} do |t| ....
+To put a foreign key in a migration file do like so :
+// In create_table line
+   t.integer "user_id"
+// Or
+   t.references :user
+
+## Running migrations
+$ rake db:migrate
+$ rake db:migrate VERSION=0 // run a specific migration version
+$ rake db:migrate:status // display the status of migrations
+$ rake db:migrate:up VERSION=121122211
+$ rake db:migrate:down VERSION=121122211
+$ rake db:migrate:down VERSION=121122211
+$ rake db:migrate:redo VERSION=121122211 // execute down then up
+
+## Migration Methods
+rename_table(old, new)
+
+### Column Methods
+add_column(table, column, type, options)
+remove_column(table, column)
+rename_column(table, old, new)
+change_column(table, column, type, options)
+
+### Indexes Methods
+add_index(table, column, options)
+remove_index(table, column)
+The index methods options are :
+:unique => true/false
+:name => "a_custom_name"
+
+### Execute migrations Methods
+execute(" raw sql ")
+
+## Solving Migration Problems
+Try to comment out executed lines in migration file to get back on the track.
+Use the minimum amount of raw sql syntax.
+Use a minimum changes in the migration file.
+Use sql command line command.
+
+# ActiveRecord and ActiveRelation
+## Generating Model
+$ rails generate model SingleName // This command will create the model and the migration files.
+VI : if we are not going to use Rails naming convension of Models and Tables use the following code inside model :
+ self.table_name = "THE_DB_TABLE_NAME" // put it at the very topof the model file
+The second solution is to rename the model file name like so : 'the_db_table_name' then rename the class name like so
+'TheDbTableName'.
+
+## Rails Console
+$ rails console environment | rails c environment
+Eg. 
+$ rails console development
+The above command will invoke 'irb' utility and load owr project, so that we can interact with it, like using ActiveRecord to popilate
+owr DB.  
+
+## Creating Record
+### Method One ( New/Save )
+a. user = User.New
+   user.name = "something"
+   user.save
+
+b. user = User.new(:name => "something")
+   user.save // returns true/false
+
+### Method Two ( Create )
+The create method of ActiveRecord object will insert data into DB then returns back to us:
+   user = User.create(:name => "something") // returns object/nil
+
+## Updating Records
+### Method One ( Find/Save )
+   user = User.find(1)
+   user.name = "something_again"
+   user.save
+### Method Two ( Find/update_attributes)
+   user = User.find(2)
+   user.update_attributes(:name => "somethingagain") // returns true/false
+
+## Deleting Records
+### Method One ( Find / Destroy )
+   user = User.find(3)
+   user.destroy // Don't confuse it with "delete" method	
+### Method Two ( Find / Delete )
+
+## Finding Records
+### Primary key finder
+   user = User.find(number) // returns object / error; return a single object
+### Dynamic finder
+   user = User.find_by_attributeName(value) // returns object / nil ; return a single object
+   Eg. User.find_by_name("string")
+### Finding  many rows
+   users = User.all // returns an array
+### Find first & last
+   user = User.first   
+   user = User.last
+
+## Query Methods 
+### Conditions
+a. where(condition)
+b. order(condition) // condition = table_name.column_name ASC/DESC
+c. limit(integer)
+d. offset(integer)
+eg. users = User.order("name ASC").limit(10).offset(5)
+
+### Condition Expression Type
+a. String like "name = 'something' AND visible = true" // Be careful it's dangerous
+b. Array like ["name = ? AND visible = true", "something"]
+c. Hash like {:name => "something", :visible => true } // It only support Equality, range, and subset checking.
+
+## Named Scopes
+a1. scope :active, lambda { where( :active => true )} // The first :active is the name of the scope.
+a2. scope :active, -> { where( :active => true )} // The first :active is the name of the scope.
+a3. def self.active // To call it do : users.active, this will return all active users.
+      where(:active => true )
+    end
+a4. scope :with_content_type, lambda{ |ctype| where( :content_type => ctype ) }
+a5. def self.with_content_type (ctype) // Call it like so : Articles.with_content_type("html")
+      where( :content_type => ctype )
+    end
+a1, a2, and a3 are the samething.
+a4 and a5 illustrate the use of parameters.
+Some examples:
+scope :visible, lambda { where( :visible => true ) }
+scope :search, lambda { |query| where(["name LIKE ?","%#{query}%"]) }
+scope :newest, lambda { order( "articles.created_at DESC")}
+
+# Relationship Types
+## One-To-One
+We define it as follow :
+ClassRoom has_one :teacher // put only 'has_one :teacher' in the same thing goes for the others.
+Teacher belongs_to :classroom
+
+## One-To-Many
+Teacher has_many :courses
+Course belongs_to :teacher
+### Methods
+1. subject.pages // pages is not an object but an array.
+2. subject.pages << page
+3. subject.pages = [page, page, page]
+4. subject.pages.delete(page)
+5. subject.pages.destroy(page)
+6. subject.pages.clear
+7. subject.pages.empty?
+8. subject.pages.size
+
+
+## Many-To-Many
+Course has_and_belongs_to_many :students
+Student has_and_belongs_to_many : courses
+### Table Naming
+first_table + _ + second_table // both table name are plural and alphabetical order
+Eg. Project - Collaborator will become
+    collaborators_projects
+    BlogPost - Category  will become
+    blog_posts_categories
+    AdminUser - Page will become
+    admin_users_pages
+Then you can create a migration for the table join table,
+then we put inside of it :
+// In change method put
+ create_table :some_thing, :id => false do |t|
+  t.integer "some_table_id"
+  t.integer "another_table_id"
+ end
+add_index :some_thing, [ "some_table_id",  "another_table_id"] 
+
+In the model put :
+has_and_belongs_to_many :some_table, :join_table => "some_thing" //  :join_table is used to define a custom join table name.
+has_and_belongs_to_many :custom_name, :class_name => "some_table",, :join_table => "some_thing" // because of :custom_name model doesn't exist we must 
+// Rails which model class to use using the key :class_name.
+has_many :editor, :class_name => "AdminUser", :foreign_key => "admin_user_id" // We use a custom name here.
+### Complex Many-to-Many
+The join table will require the foreign keys that join tables togather.
+The join table will require a primary key
+The join table has its own Model
+Table names ending in "-ments" and "-ships" work well.
+### Traversing a complex Many-To-Many
+Use has_many :through to traverse easilly.
+Eg.
+AdminUser has_many :section_edits
+AdminUser has_many :sections, :through => :section_edits
+
+Section has_many :section_edits
+Section has_many :admin_users, :through => :section_edits
+
+# Controller and CRUD
+## Basic CRUD
+Create -> new ( to display new record form ); create ( process new record form) // new and create are method defined inside a controller.
+Raed -> index (list records); show display a single record
+Update -> edit ( display edit record form); update (process edit record form)
+Delete -> delete (display delete record form); destroy ( process delete record form)
+Use plural in CRUD controller names Eg. Articles, Subjects and so one.
+To generate one use : 
+$ rails generate controller Subjects index show ....
+
+## Form basics
+In your HTMH name attribute use form array naming convention 
+Eg.
+<input name="subject[title]" ...
+Then we can grab the parameters like so :
+subject = Subject.new(params[:subject]) // To grab all parameters at once.
+We can use formtaghelper class, formhelper, and primitive html form tag to build form inside Rails.
+Example of using FormTagHelper class :
+<%= form_tag( :action => create ) do %>
+<%= text_field_tag('subject[name]') %> // This will output text field without a value
+...
+<%= submit_tag('Create subject') %>
+<% end %>
+ -- Object aware form --
+<%= text_field(:subject, :name) %>// text_field without '_tag', this will output the text field with a value.
+
+Example of using FormHelper class ( A shortcut version ) :
+<%= form_for( :subject, :url => {:action =>  'create'}) do |f| %>
+<%= f.text_field(:name) %>
+...
+<% end %>
+
+To set default value of form field will put this in owr action defenition :
+Eg. def new
+      @subject = Subject.new({:name => "Default name})
+    end
+
+### Mass assignment and Strong Paramaters
+#### Strong Parameters
+params.permit(:first_name, :last_name) // Those are permited to be mass assignment params this will protect your code from hackers.
+params.require(:user) // The object will be required.
+Then you can write like so :
+params.require(:subject).permit(:name, :position, :visible)
+Then you can pass it to object like so :
+Eg. subject = Subject.new(params.require(:subject).permit(:name, :position, :visible))
+Or even better :
+subject = Subject.new(subject_params)
+...
+private // Only accessible inside the class.
+def subject_params
+params.require(:subject).permit(:name, :position, :visible)
+end
+
+# Flash Hash
+Put the following code in action defenition befor 'edirect_to' for example
+flash[:notice] = " some message goes here "
+flash[:error] = " some message goes here "
+Then in owr view we can put :
+<% if !flash[:notice].blank? %>
+<%= flash[:notice] %>
+<% end %>
+
+# Layouts
+// views/layouts/application.html.erb
+...
+<body> <%= yield %> ...
+
+# Partial Templates
+All partial template file name began with '_' underscore character Eg. '_form.html.erb'
+To render a partial we do like so :
+// In view file
+<%= render(:partial => 'form', :locals => {:f => f } ) %> // Notice the name without underscore character.
+// We use :locals to pass parameters to the partial template.
+We can specify the full path of the partial template like so :
+Eg. :partial => 'subject/form'
+
+# Text Helpers
+1. word_wrap(text, :line_length => 30 ) // Will break line if the line excead 30 characters.
+2. simple_format(text) // Convert all '\n' to '<br>'
+3. truncate(text, length => 40, :omission => '...')// Will truncate the text to only 40 characters then add in the end '...'
+4. excerpt(text, 'target', :radius => 7, :omission => '...') // This will lets 7 character before and after the word 'target' then put in both side '...'
+5. heighlith(text, ['word1','word2',...],:highligther => '<em>\1</em>') // This will highligth each word by wrapping it using '<em>' tag.
+6. pluralize Eg.
+  'student'.pluralize
+  pluralize(number, 'simple_form','plural_form'))
+7. cycle('red', 'green', 'blue') // This will cycle each time through these values, each time it will output only one value.
+
+# Number Helpers
+1. number_to currency(number, :precision => 0, :unit => 'kr', :format => '%n %u') // Eg. '35 kr'
+2. number_to_percentage(number, :precision => 1, :separator => ',') // 34,5 %
+3. number_with_precision(number, :precision => 6) // 34.123456, use 'number_to_rounded' to the same behavior.
+4. number_with_delimiter(number, :delimiter => ' ') // 3 123 456 , also knows as 'number_to_delimited'.
+5. number_to_human(number, :precision => 5) // 123.45 Million
+6. number_to_human_size(number, :precision => 2) // 1.2 MB
+7. number_to_phone // See documentation
+
+# Date and Time Helpers
+## Calculation
+Eg. Time.now + 30.days - 23.minutes
+    30.days.from_now - 23.minutes
+    30.moths.ago
+## Formating
+datetime.strftime(format_string)
+Time.now.strftime("%B %d, %Y %H:%M)
+datetime.to_s(format_symbol) // 'format_symbol' not 'format_string' Eg. :db, :number, :time,...
+
+# Custom Helpers
+// helpers/name_helper.rb
+module NameHelper
+ # some code goes here.
+end
+// Form common helper use 'application_helper.rb'
+
+# Sanitize
+// To prevent Cross-Site Scripting ( XSS )
+## Escaping output
+1. html_escape(), h()
+2. raw() // If we don't want to escape html.
+3. html_safe() // Rails will consider it safe. same as raw().
+4. html_safe? // Check if the is marked as safe html.
+5. strip_links(html) // Get rid of all links.
+6. stript_tags(html) // Remove all tags inlike html_escape.
+7. sanitize(html, options) // Options : :tags, :attributs (as arrays) to whitelist.
+
+# Asset Pipeline
+The prefered assets location is : app/assets/{images|javascripts|stylesheets}
+To precompile all files type in command line :
+RAILS_ENV=production bundle exec rake assets:precompile
+
+## Stylesheets
+With asset pipeline : /app/assets/stylesheets
+without asset pipeline : /public/stylesheets
+File name should end in '.css' or in '.css.scss' for sass file.
+Use the manifest file 'application.css' to tel Ruby wich style file to be process 
+Eg.
+// application.css
+*= require_self ---> this will process
+*= require public ---> this will load 'public.css' first
+*= require admin ---> this will load 'admin.css' second
+*= require_tree . ---> this will load alll remaining files even that inside a sub folder. the dot means all.
+
+### Stylesheet Link Tag
+<%= stylesheet_link_tag('application', :media => "all") %> // 'application' is the manifest file not a stylesheet file.
+
+## Javascripts
+File name end in '.js' or '.js.coffee' for coffeescript files.
+The manifest file is : /app/assets/javascripts/application.js
+//= require jquery
+//= require jquery_ujs
+//= require turbolinks
+//= require_tree .
+
+### Javascript Helpers
+1. <%= javascript_include_tag('appliaction') %>
+2. <%= javascript_tag(" alert(' are you sure? '); " ) %>
+OR do as follow :
+<%= javascript_tag do %>
+   alert(' are you sure? '); 
+<% end %>
+### Escaping Javascript
+Use escape_javascript(text), j(text) like the following example :
+<%= javascript_tag(" alert(' some text #{j(text)}'); ") %>
+
+# Images
+core images goes in /app/assets/images // with asset pipeline
+and in /public/images without asset pipeline
+for user-upload image goes in /public/images
+
+## Image upload gems
+1. paperclip, 2. Carrierwave
+## Image Helpers
+<%= image_tag('logo.png', :size => '90x55', :alt => 'logo') %> // you don't need to specify the location of the file.
+<%= image_tag('logo.png',  :width => 90, :height => 55, :alt => 'logo') %> 
+In the css file we have to specify the location of an image eg. /app/assets/images/logo.png' as follow :
+// In a css file
+... url('assets/logo.png') ...
+
+# Form Helpers
+text_field(:name, :size => 40, :maxlength => 40 ),
+password_field (:name, :size => 40, :maxlength => 40),
+hiddeb_field(:token), 
+text_area(:description, :size => '40x5') // Or :cols => 40, :rows => 5, 
+radio_button(:content_type, "string"), 
+check_box(:visible), 
+file_field(:logo) // Require :multipart => true, example in your form
+:html => { :multipart => true}, :url => {:action => 'an_action'} ....
+label(:visible)
+
+## Form Option Helpers
+select(object, attributes,choices,  options = {}, html_options={})
+options : 
+:selected => object.attribute
+:include_black => true/false
+:prompt => true/false
+:disabled => true/false
+choices can be : range, array, array of array, and hash.
+
+## Date and Time Form Helpers
+date_select(object, attributes,  options = {}, html_options={})
+Options :
+:start_year => Time.now.year - 5
+:end_year
+:order => [:year, :month, :day]
+:discart_year, discart_month, :discart_day => true/false
+:inclide_blank => true/false
+:prompt => true/false
+:use_month_numbers => bool
+:add_month_numbers => bool
+:use_short_month => bool
+:date_separator => ""
+
+time(object, attributes,  options = {}, html_options={})
+Options :
+:include_second => bool
+:minute_step => 1
+:include_black => bool
+:prompt
+:time_separator => ""
+
+datetime(object, attributes,  options = {}, html_options={})
+Options: 
+datetime_separator => '-'
+
+## Form Errors
+> Simple validation 
+Add 'validates_presence_of :name' in a model.
+> Object.errors, array containing all errors
+  some methods :
+    object.errors.clear
+    object.errors.size
+    object.errors.each {| attr, msg | ... }
+    object.errors.full_messages.each {|  msg | ... }
+
+## Display Form Errors
+use /views/application/... to hold all common partial template
+
+## Preventing Cross-Site Request Forgery ( CSRF )
+In application controller put :
+  'protect_from_forgery with:  :exception'
+To disabled it in some controller put :
+  'skip_before_action :verify_authenticity_token'
+OR
+  'protect_from_forgery  :exception => [:action1, :action2, ...]'
+
+## CSRF token for Javascript and Ajax
+Add to the head of the html page
+<%= csrf_meta_tag %>
+
+# Validation Methods
+validates_presence_of, valiadtes_length_of, validates_numericality_of, validates_inclusion_of, validates_exclusion_of
+validates_format_of, validates_uniqueness_of, validates_acceptance_of, validates_confirmation_of, validates_associated
+
+## Using Validation Methods
+Egs.
+// put these in model
+validates_presence_of :name
+validates_length_of :name, :maximum => 255
+validates_length_of :name, :within => 1..255
+validates_uniqueness :name 
+validates_inclusion_of :name, :in => ['apple', 'orange'], :message => "blah blah ..."
+validates_presence_of :content
+validate_format_of :email, :with => EMAIL_REGEX, :on => :create
+validates_confirmation_of :email // The attribute name will be 'email_confirmation'
+
+Prety validation Method :
+validates :email, :presence => true,
+                  :length => { :maximum => 50 }
+                  :uniqueness => true,
+                  :format => { :with => EMAIL_REGEX }
+                  :confirmation => true
+
+## Custom Validation
+validate :custom_method
+
+def custom_method
+  errors.add(:attribute_name, ' a custom message')
+  # Or
+  errors[:base] << ' a custom message' // for general one.
+
+end
+
+# Authentification
+## Secure password
+1. has_secure_password
+    require : bcrypt_ruby, the table of Db must have a column colled 'password_digest'
+Then the only thing to do is put the following line in the model file :
+  has_secure_password // at the top,  this will add validation and other things.
+Then we can check the authentication as follow :
+  user.authenticate("thepassword")
+// to see the encryption version type : user.password_digest
+
+## Login and Logout
+
+
+## Cookies and Sessions
+### Cookies
+Cookies limitaion : 
+> 4k as max size = 4096 characters
+> Reside on the user's computer.
+> Can be delete, Read, or altered.
+Usage of Cookies :
+cookies[:username] = "john"
+cookies[:username] = {
+  :value => "john",
+  :expire => 1.week.from_now
+}
+<%= cookies[:username] %>
+
+### Sessions
+Usage :
+session[:username] = "john"
+<%= session[:username] %>
+Storage Type :
+> File storage // Removed now
+> Database storage // Moved to ruby gem 
+> Cookie storage
+#### Cookie Storage Session
+1. configuration
+1.1 set secret key in the '/config/initializers/secret_token.rb'
+    // We can create a new one by typing in command line : rake secret
+1.2 Set the type of session storage in '/config/initializers/session_store.rb'
+  // Example ':cookie_store'
+2. Usage
+In a controller do :
+  // To mark user as they are logedin
+  session[:user_id] = autehticate_user.id
+  session[:username] = autehticate_user.user_name
+// To mark user as they are logged out
+  session[:user_id] = nil
+  session[:username] = nil 
+
+## Restricting Access with before_action
+In a controller put for example :
+before_action :confirm_logged_in, :except => [:login, :attempt_login, :logout ] // This fire the method 'confirm_logged_in'
+// on all action except for listed one here :login, :attempt_loggin, and :logout
+private
+def confirm_logged_in
+  # some code
+end
+before_action can be called with :only => [], :except => [], or with both of them
+the methods fired by before_action must return false to halt before_action chain.
+Example of a method 'confirm_logged_in' code :
+unless session[:user_id]
+  flash[:notice] = "Please log in."
+  redirect_to(:controller => 'access', :action => 'login' )
+  return false
+else
+  return true
+
+To to secure others controller just put the above code in 'appliaction_controller.rb', because all controllers inherite from this one.
+Then in each controller add this portion of code :
+before_action :confirm_logged_in
+
+## Controller callbacks methods
+before_action
+after_action
+around_action (both before and after)
+skip_before_action
+skip_after_action
+skip_around_action (both before and after)
+
+
+VI  
+a. Class with 'belongs_to' should have the foreign key.
+b. Always define both sides of the relationship.
+c. To unrelate object do :
+  c1. set the foreign key to nil Eg. profile.user_id = nil
+  c2. user.profile = nil // This will set user object to nil but don't delete data from database table.
+  c3. user.profile.destroy // To get rid of user object. This will remove the record from the database.
+
+
+
+NB : 
+> to disable the layout put the following code at the top of controller code :
+  layout disable
+> model_instance.new_record? will tel us if the record is new or not.
+> model_instance.attribute_name to returns the value of the given attribute name
+Eg. user.name will returns the user name value.
+> user.to_sql will give us th raw sql syntax.
+> user.profile(true) // this will reload the profile.
+
