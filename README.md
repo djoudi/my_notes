@@ -1,1 +1,1 @@
-### This is my notes about programming languages and other stuf.
+### This is my notes about programming languages and other stuff.
